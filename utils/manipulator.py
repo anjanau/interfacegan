@@ -50,26 +50,26 @@ def train_boundary(latent_codes,
 
   if (not isinstance(latent_codes, np.ndarray) or
       not len(latent_codes.shape) == 2):
-    raise ValueError(f'Input `latent_codes` should be with type'
-                     f'`numpy.ndarray`, and shape [num_samples, '
-                     f'latent_space_dim]!')
+    raise ValueError('Input `latent_codes` should be with type'
+                     '`numpy.ndarray`, and shape [num_samples, '
+                     'latent_space_dim]!')
   num_samples = latent_codes.shape[0]
   latent_space_dim = latent_codes.shape[1]
   if (not isinstance(scores, np.ndarray) or not len(scores.shape) == 2 or
       not scores.shape[0] == num_samples or not scores.shape[1] == 1):
-    raise ValueError(f'Input `scores` should be with type `numpy.ndarray`, and '
-                     f'shape [num_samples, 1], where `num_samples` should be '
-                     f'exactly same as that of input `latent_codes`!')
+    raise ValueError('Input `scores` should be with type `numpy.ndarray`, and '
+                     'shape [num_samples, 1], where `num_samples` should be '
+                     'exactly same as that of input `latent_codes`!')
   if chosen_num_or_ratio <= 0:
-    raise ValueError(f'Input `chosen_num_or_ratio` should be positive, '
-                     f'but {chosen_num_or_ratio} received!')
+    raise ValueError('Input `chosen_num_or_ratio` should be positive, '
+                     'but {chosen_num_or_ratio} received!')
 
-  logger.info(f'Filtering training data.')
+  logger.info('Filtering training data.')
   if invalid_value is not None:
     latent_codes = latent_codes[scores[:, 0] != invalid_value]
     scores = scores[scores[:, 0] != invalid_value]
 
-  logger.info(f'Sorting scores to get positive and negative samples.')
+  logger.info('Sorting scores to get positive and negative samples.')
   sorted_idx = np.argsort(scores, axis=0)[::-1, 0]
   latent_codes = latent_codes[sorted_idx]
   scores = scores[sorted_idx]
@@ -80,7 +80,7 @@ def train_boundary(latent_codes,
     chosen_num = int(chosen_num_or_ratio)
   chosen_num = min(chosen_num, num_samples // 2)
 
-  logger.info(f'Spliting training and validation sets:')
+  logger.info('Spliting training and validation sets:')
   train_num = int(chosen_num * split_ratio)
   val_num = chosen_num - train_num
   # Positive samples.
@@ -97,12 +97,12 @@ def train_boundary(latent_codes,
   train_data = np.concatenate([positive_train, negative_train], axis=0)
   train_label = np.concatenate([np.ones(train_num, dtype=np.int),
                                 np.zeros(train_num, dtype=np.int)], axis=0)
-  logger.info(f'  Training: {train_num} positive, {train_num} negative.')
+  logger.info('  Training: {train_num} positive, {train_num} negative.')
   # Validation set.
   val_data = np.concatenate([positive_val, negative_val], axis=0)
   val_label = np.concatenate([np.ones(val_num, dtype=np.int),
                               np.zeros(val_num, dtype=np.int)], axis=0)
-  logger.info(f'  Validation: {val_num} positive, {val_num} negative.')
+  logger.info('  Validation: {val_num} positive, {val_num} negative.')
   # Remaining set.
   remaining_num = num_samples - chosen_num * 2
   remaining_data = latent_codes[chosen_num:-chosen_num]
@@ -112,27 +112,27 @@ def train_boundary(latent_codes,
   remaining_label[remaining_scores.ravel() < decision_value] = 0
   remaining_positive_num = np.sum(remaining_label == 1)
   remaining_negative_num = np.sum(remaining_label == 0)
-  logger.info(f'  Remaining: {remaining_positive_num} positive, '
-              f'{remaining_negative_num} negative.')
+  logger.info('  Remaining: {remaining_positive_num} positive, '
+              '{remaining_negative_num} negative.')
 
-  logger.info(f'Training boundary.')
+  logger.info('Training boundary.')
   clf = svm.SVC(kernel='linear')
   classifier = clf.fit(train_data, train_label)
-  logger.info(f'Finish training.')
+  logger.info('Finish training.')
 
   if val_num:
     val_prediction = classifier.predict(val_data)
     correct_num = np.sum(val_label == val_prediction)
-    logger.info(f'Accuracy for validation set: '
-                f'{correct_num} / {val_num * 2} = '
-                f'{correct_num / (val_num * 2):.6f}')
+    logger.info('Accuracy for validation set: '
+                '{correct_num} / {val_num * 2} = '
+                '{correct_num / (val_num * 2):.6f}')
 
   if remaining_num:
     remaining_prediction = classifier.predict(remaining_data)
     correct_num = np.sum(remaining_label == remaining_prediction)
-    logger.info(f'Accuracy for remaining set: '
-                f'{correct_num} / {remaining_num} = '
-                f'{correct_num / remaining_num:.6f}')
+    logger.info('Accuracy for remaining set: '
+                '{correct_num} / {remaining_num} = '
+                '{correct_num / remaining_num:.6f}')
 
   a = classifier.coef_.reshape(1, latent_space_dim).astype(np.float32)
   return a / np.linalg.norm(a)
@@ -160,8 +160,8 @@ def project_boundary(primal, *args):
     NotImplementedError: If there are more than two condition boundaries.
   """
   if len(args) > 2:
-    raise NotImplementedError(f'This function supports projecting with at most '
-                              f'two conditions.')
+    raise NotImplementedError('This function supports projecting with at most '
+                              'two conditions.')
   assert len(primal.shape) == 2 and primal.shape[0] == 1
 
   if not args:
@@ -237,7 +237,7 @@ def linear_interpolate(latent_code,
   if len(latent_code.shape) == 3:
     linspace = linspace.reshape(-1, 1, 1).astype(np.float32)
     return latent_code + linspace * boundary.reshape(1, 1, -1)
-  raise ValueError(f'Input `latent_code` should be with shape '
-                   f'[1, latent_space_dim] or [1, N, latent_space_dim] for '
-                   f'W+ space in Style GAN!\n'
-                   f'But {latent_code.shape} is received.')
+  raise ValueError('Input `latent_code` should be with shape '
+                   '[1, latent_space_dim] or [1, N, latent_space_dim] for '
+                   'W+ space in Style GAN!\n'
+                   'But {latent_code.shape} is received.')

@@ -63,7 +63,7 @@ def main():
   args = parse_args()
   logger = setup_logger(args.output_dir, logger_name='generate_data')
 
-  logger.info(f'Initializing generator.')
+  logger.info('Initializing generator.')
   gan_type = MODEL_POOL[args.model_name]['gan_type']
   if gan_type == 'pggan':
     model = PGGANGenerator(args.model_name, logger)
@@ -72,26 +72,26 @@ def main():
     model = StyleGANGenerator(args.model_name, logger)
     kwargs = {'latent_space_type': args.latent_space_type}
   else:
-    raise NotImplementedError(f'Not implemented GAN type `{gan_type}`!')
+    raise NotImplementedError('Not implemented GAN type `{gan_type}`!')
 
-  logger.info(f'Preparing boundary.')
+  logger.info('Preparing boundary.')
   if not os.path.isfile(args.boundary_path):
-    raise ValueError(f'Boundary `{args.boundary_path}` does not exist!')
+    raise ValueError('Boundary `{args.boundary_path}` does not exist!')
   boundary = np.load(args.boundary_path)
   np.save(os.path.join(args.output_dir, 'boundary.npy'), boundary)
 
-  logger.info(f'Preparing latent codes.')
+  logger.info('Preparing latent codes.')
   if os.path.isfile(args.input_latent_codes_path):
-    logger.info(f'  Load latent codes from `{args.input_latent_codes_path}`.')
+    logger.info('  Load latent codes from `{args.input_latent_codes_path}`.')
     latent_codes = np.load(args.input_latent_codes_path)
     latent_codes = model.preprocess(latent_codes, **kwargs)
   else:
-    logger.info(f'  Sample latent codes randomly.')
+    logger.info('  Sample latent codes randomly.')
     latent_codes = model.easy_sample(args.num, **kwargs)
   np.save(os.path.join(args.output_dir, 'latent_codes.npy'), latent_codes)
   total_num = latent_codes.shape[0]
 
-  logger.info(f'Editing {total_num} samples.')
+  logger.info('Editing {total_num} samples.')
   for sample_id in tqdm(range(total_num), leave=False):
     interpolations = linear_interpolate(latent_codes[sample_id:sample_id + 1],
                                         boundary,
@@ -106,12 +106,12 @@ def main():
         outputs = model.easy_synthesize(interpolations_batch, **kwargs)
       for image in outputs['image']:
         save_path = os.path.join(args.output_dir,
-                                 f'{sample_id:03d}_{interpolation_id:03d}.jpg')
+                                 '{sample_id:03d}_{interpolation_id:03d}.jpg')
         cv2.imwrite(save_path, image[:, :, ::-1])
         interpolation_id += 1
     assert interpolation_id == args.steps
-    logger.debug(f'  Finished sample {sample_id:3d}.')
-  logger.info(f'Successfully edited {total_num} samples.')
+    logger.debug('  Finished sample {sample_id:3d}.')
+  logger.info('Successfully edited {total_num} samples.')
 
 
 if __name__ == '__main__':

@@ -278,7 +278,7 @@ class MappingModule(nn.Sequential):
     sequence = OrderedDict()
 
     def _add_layer(layer, name=None):
-      name = name or f'dense{len(sequence) + (not normalize_input) - 1}'
+      name = name or 'dense{len(sequence) + (not normalize_input) - 1}'
       sequence[name] = layer
 
     if normalize_input:
@@ -291,8 +291,8 @@ class MappingModule(nn.Sequential):
 
   def forward(self, x):
     if len(x.shape) != 2:
-      raise ValueError(f'The input tensor should be with shape [batch_size, '
-                       f'noise_dim], but {x.shape} received!')
+      raise ValueError('The input tensor should be with shape [batch_size, '
+                       'noise_dim], but {x.shape} received!')
     return super().forward(x)
 
 
@@ -345,33 +345,33 @@ class SynthesisModule(nn.Module):
     try:
       self.channels = _RESOLUTIONS_TO_CHANNELS[resolution]
     except KeyError:
-      raise ValueError(f'Invalid resolution: {resolution}!\n'
-                       f'Resolutions allowed: '
-                       f'{list(_RESOLUTIONS_TO_CHANNELS)}.')
+      raise ValueError('Invalid resolution: {resolution}!\n'
+                       'Resolutions allowed: '
+                       '{list(_RESOLUTIONS_TO_CHANNELS)}.')
     assert len(self.channels) == int(np.log2(resolution))
 
     for block_idx in range(1, len(self.channels)):
       if block_idx == 1:
         self.add_module(
-            f'layer{2 * block_idx - 2}',
+            'layer{2 * block_idx - 2}',
             FirstConvBlock(in_channels=self.channels[block_idx - 1],
                            randomize_noise=randomize_noise))
       else:
         self.add_module(
-            f'layer{2 * block_idx - 2}',
+            'layer{2 * block_idx - 2}',
             UpConvBlock(layer_idx=2 * block_idx - 2,
                         in_channels=self.channels[block_idx - 1],
                         out_channels=self.channels[block_idx],
                         randomize_noise=randomize_noise,
                         fused_scale=fused_scale))
       self.add_module(
-          f'layer{2 * block_idx - 1}',
+          'layer{2 * block_idx - 1}',
           ConvBlock(layer_idx=2 * block_idx - 1,
                     in_channels=self.channels[block_idx],
                     out_channels=self.channels[block_idx],
                     randomize_noise=randomize_noise))
       self.add_module(
-          f'output{block_idx - 1}',
+          'output{block_idx - 1}',
           LastConvBlock(in_channels=self.channels[block_idx],
                         out_channels=output_channels))
 
@@ -385,12 +385,12 @@ class SynthesisModule(nn.Module):
       if block_idx + lod < len(self.channels):
         layer_idx = 2 * block_idx - 2
         if layer_idx == 0:
-          x = self.__getattr__(f'layer{layer_idx}')(w[:, layer_idx])
+          x = self.__getattr__('layer{layer_idx}')(w[:, layer_idx])
         else:
-          x = self.__getattr__(f'layer{layer_idx}')(x, w[:, layer_idx])
+          x = self.__getattr__('layer{layer_idx}')(x, w[:, layer_idx])
         layer_idx = 2 * block_idx - 1
-        x = self.__getattr__(f'layer{layer_idx}')(x, w[:, layer_idx])
-        image = self.__getattr__(f'output{block_idx - 1}')(x)
+        x = self.__getattr__('layer{layer_idx}')(x, w[:, layer_idx])
+        image = self.__getattr__('output{block_idx - 1}')(x)
       else:
         image = self.upsample(image)
     return image
@@ -416,8 +416,8 @@ class InstanceNormLayer(nn.Module):
 
   def forward(self, x):
     if len(x.shape) != 4:
-      raise ValueError(f'The input tensor should be with shape [batch_size, '
-                       f'num_channels, height, width], but {x.shape} received!')
+      raise ValueError('The input tensor should be with shape [batch_size, '
+                       'num_channels, height, width], but {x.shape} received!')
     x = x - torch.mean(x, dim=[2, 3], keepdim=True)
     x = x / torch.sqrt(torch.mean(x**2, dim=[2, 3], keepdim=True) +
                        self.epsilon)
@@ -476,8 +476,8 @@ class NoiseApplyingLayer(nn.Module):
 
   def forward(self, x):
     if len(x.shape) != 4:
-      raise ValueError(f'The input tensor should be with shape [batch_size, '
-                       f'num_channels, height, width], but {x.shape} received!')
+      raise ValueError('The input tensor should be with shape [batch_size, '
+                       'num_channels, height, width], but {x.shape} received!')
     if self.randomize_noise:
       noise = torch.randn(x.shape[0], 1, self.res, self.res).to(x)
     else:
@@ -499,8 +499,8 @@ class StyleModulationLayer(nn.Module):
 
   def forward(self, x, w):
     if len(w.shape) != 2:
-      raise ValueError(f'The input tensor should be with shape [batch_size, '
-                       f'num_channels], but {x.shape} received!')
+      raise ValueError('The input tensor should be with shape [batch_size, '
+                       'num_channels], but {x.shape} received!')
     style = self.dense(w)
     style = style.view(-1, 2, self.channels, 1, 1)
     return x * (style[:, 0] + 1) + style[:, 1]
@@ -531,9 +531,9 @@ class WScaleLayer(nn.Module):
       return x * self.scale + self.bias.view(1, -1, 1, 1) * self.lr_multiplier
     if len(x.shape) == 2:
       return x * self.scale + self.bias.view(1, -1) * self.lr_multiplier
-    raise ValueError(f'The input tensor should be with shape [batch_size, '
-                     f'num_channels, height, width], or [batch_size, '
-                     f'num_channels], but {x.shape} received!')
+    raise ValueError('The input tensor should be with shape [batch_size, '
+                     'num_channels, height, width], or [batch_size, '
+                     'num_channels], but {x.shape} received!')
 
 
 class EpilogueBlock(nn.Module):
@@ -553,8 +553,8 @@ class EpilogueBlock(nn.Module):
     elif normalization_fn == 'instance':
       self.norm = InstanceNormLayer()
     else:
-      raise NotImplementedError(f'Not implemented normalization function: '
-                                f'{normalization_fn}!')
+      raise NotImplementedError('Not implemented normalization function: '
+                                '{normalization_fn}!')
     self.style_mod = StyleModulationLayer(channels)
 
   def forward(self, x, w):
@@ -629,11 +629,11 @@ class UpConvBlock(nn.Module):
     """
     super().__init__()
     if layer_idx % 2 == 1:
-      raise ValueError(f'This block is implemented as the first block of each '
-                       f'resolution, but is applied to layer {layer_idx}!')
+      raise ValueError('This block is implemented as the first block of each '
+                       'resolution, but is applied to layer {layer_idx}!')
     if fused_scale not in [True, False, 'auto']:
-      raise ValueError(f'`fused_scale` can only be [True, False, `auto`], '
-                       f'but {fused_scale} received!')
+      raise ValueError('`fused_scale` can only be [True, False, `auto`], '
+                       'but {fused_scale} received!')
 
     cur_res = 2 ** (layer_idx // 2 + 2)
     if fused_scale == 'auto':
@@ -719,8 +719,8 @@ class ConvBlock(nn.Module):
     """
     super().__init__()
     if layer_idx % 2 == 0:
-      raise ValueError(f'This block is implemented as the second block of each '
-                       f'resolution, but is applied to layer {layer_idx}!')
+      raise ValueError('This block is implemented as the second block of each '
+                       'resolution, but is applied to layer {layer_idx}!')
 
     self.conv = nn.Conv2d(in_channels=in_channels,
                           out_channels=out_channels,
@@ -806,8 +806,8 @@ class DenseBlock(nn.Module):
     elif activation_type == 'lrelu':
       self.activate = nn.LeakyReLU(negative_slope=0.2, inplace=True)
     else:
-      raise NotImplementedError(f'Not implemented activation function: '
-                                f'{activation_type}!')
+      raise NotImplementedError('Not implemented activation function: '
+                                '{activation_type}!')
 
   def forward(self, x):
     x = self.linear(x)

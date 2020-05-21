@@ -116,9 +116,9 @@ class PGGANGeneratorModel(nn.Module):
     try:
       self.channels = _RESOLUTIONS_TO_CHANNELS[resolution]
     except KeyError:
-      raise ValueError(f'Invalid resolution: {resolution}!\n'
-                       f'Resolutions allowed: '
-                       f'{list(_RESOLUTIONS_TO_CHANNELS)}.')
+      raise ValueError('Invalid resolution: {resolution}!\n'
+                       'Resolutions allowed: '
+                       '{list(_RESOLUTIONS_TO_CHANNELS)}.')
     assert len(self.channels) == int(np.log2(resolution))
 
     self.resolution = resolution
@@ -128,24 +128,24 @@ class PGGANGeneratorModel(nn.Module):
     for block_idx in range(1, len(self.channels)):
       if block_idx == 1:
         self.add_module(
-            f'layer{2 * block_idx - 2}',
+            'layer{2 * block_idx - 2}',
             ConvBlock(in_channels=self.channels[block_idx - 1],
                       out_channels=self.channels[block_idx],
                       kernel_size=4,
                       padding=3))
       else:
         self.add_module(
-            f'layer{2 * block_idx - 2}',
+            'layer{2 * block_idx - 2}',
             ConvBlock(in_channels=self.channels[block_idx - 1],
                       out_channels=self.channels[block_idx],
                       upsample=True,
                       fused_scale=self.fused_scale))
       self.add_module(
-          f'layer{2 * block_idx - 1}',
+          'layer{2 * block_idx - 1}',
           ConvBlock(in_channels=self.channels[block_idx],
                     out_channels=self.channels[block_idx]))
       self.add_module(
-          f'output{block_idx - 1}',
+          'output{block_idx - 1}',
           ConvBlock(in_channels=self.channels[block_idx],
                     out_channels=self.output_channels,
                     kernel_size=1,
@@ -165,16 +165,16 @@ class PGGANGeneratorModel(nn.Module):
 
   def forward(self, x):
     if len(x.shape) != 2:
-      raise ValueError(f'The input tensor should be with shape [batch_size, '
-                       f'noise_dim], but {x.shape} received!')
+      raise ValueError('The input tensor should be with shape [batch_size, '
+                       'noise_dim], but {x.shape} received!')
     x = x.view(x.shape[0], x.shape[1], 1, 1)
 
     lod = self.lod.cpu().tolist()
     for block_idx in range(1, len(self.channels)):
       if block_idx + lod < len(self.channels):
-        x = self.__getattr__(f'layer{2 * block_idx - 2}')(x)
-        x = self.__getattr__(f'layer{2 * block_idx - 1}')(x)
-        image = self.__getattr__(f'output{block_idx - 1}')(x)
+        x = self.__getattr__('layer{2 * block_idx - 2}')(x)
+        x = self.__getattr__('layer{2 * block_idx - 1}')(x)
+        image = self.__getattr__('output{block_idx - 1}')(x)
       else:
         image = self.upsample(image)
     return image
@@ -301,8 +301,8 @@ class ConvBlock(nn.Module):
     elif activation_type == 'tanh':
       self.activate = nn.Hardtanh()
     else:
-      raise NotImplementedError(f'Not implemented activation function: '
-                                f'{activation_type}!')
+      raise NotImplementedError('Not implemented activation function: '
+                                '{activation_type}!')
 
   def forward(self, x):
     x = self.pixel_norm(x)

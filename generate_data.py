@@ -16,7 +16,7 @@ import numpy as np
 from tqdm import tqdm
 
 from models.model_settings import MODEL_POOL
-from models.pggan_generator import PGGANGenerator
+#from models.pggan_generator import PGGANGenerator
 from models.stylegan_generator import StyleGANGenerator
 from utils.logger import setup_logger
 
