@@ -72,7 +72,7 @@ class BaseGenerator(object):
     self.model_name = model_name
     for key, val in model_settings.MODEL_POOL[model_name].items():
       setattr(self, key, val)
-    self.use_cuda = model_settings.USE_CUDA
+    self.use_cuda = torch.cuda.is_available()
     self.batch_size = model_settings.MAX_IMAGES_ON_DEVICE
     self.logger = logger or get_temp_logger(model_name + '_generator')
     self.model = None

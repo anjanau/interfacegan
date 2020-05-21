@@ -1,3 +1,4 @@
+
 # python3.7
 """Contains the implementation of generator described in StyleGAN.
 

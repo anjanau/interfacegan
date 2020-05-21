@@ -56,14 +56,14 @@ class StyleGANGenerator(BaseGenerator):
         randomize_noise=self.randomize_noise)
 
   def load(self):
-    self.logger.info(f'Loading pytorch model from `{self.model_path}`.')
+    self.logger.info('Loading pytorch model from `{self.model_path}`.')
     state_dict = torch.load(self.model_path)
     for var_name in self.model_specific_vars:
       state_dict[var_name] = self.model.state_dict()[var_name]
     self.model.load_state_dict(state_dict)
-    self.logger.info(f'Successfully loaded!')
+    self.logger.info('Successfully loaded!')
     self.lod = self.model.synthesis.lod.to(self.cpu_device).tolist()
-    self.logger.info(f'  `lod` of the loaded model is {self.lod}.')
+    self.logger.info('  `lod` of the loaded model is {self.lod}.')
 
   def convert_tf_model(self, test_num=10):
     import sys
@@ -72,13 +72,13 @@ class StyleGANGenerator(BaseGenerator):
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
     sys.path.append(model_settings.BASE_DIR + '/stylegan_tf_official')
 
-    self.logger.info(f'Loading tensorflow model from `{self.tf_model_path}`.')
+    self.logger.info('Loading tensorflow model from `{self.tf_model_path}`.')
     tf.InteractiveSession()
     with open(self.tf_model_path, 'rb') as f:
       _, _, tf_model = pickle.load(f)
-    self.logger.info(f'Successfully loaded!')
+    self.logger.info('Successfully loaded!')
 
-    self.logger.info(f'Converting tensorflow model to pytorch version.')
+    self.logger.info('Converting tensorflow model to pytorch version.')
     tf_vars = dict(tf_model.__getstate__()['variables'])
     tf_vars.update(
         dict(tf_model.components.mapping.__getstate__()['variables']))
@@ -89,12 +89,12 @@ class StyleGANGenerator(BaseGenerator):
       if 'ToRGB_lod' in tf_var_name:
         lod = int(tf_var_name[len('ToRGB_lod')])
         lod_shift = 10 - int(np.log2(self.resolution))
-        tf_var_name = tf_var_name.replace(f'{lod}', f'{lod - lod_shift}')
+        tf_var_name = tf_var_name.replace('{lod}', '{lod - lod_shift}')
       if tf_var_name not in tf_vars:
-        self.logger.debug(f'Variable `{tf_var_name}` does not exist in '
-                          f'tensorflow model.')
+        self.logger.debug('Variable `{tf_var_name}` does not exist in '
+                          'tensorflow model.')
         continue
-      self.logger.debug(f'  Converting `{tf_var_name}` to `{pth_var_name}`.')
+      self.logger.debug('  Converting `{tf_var_name}` to `{pth_var_name}`.')
       var = torch.from_numpy(np.array(tf_vars[tf_var_name]))
       if 'weight' in pth_var_name:
         if 'dense' in pth_var_name:
@@ -102,20 +102,20 @@ class StyleGANGenerator(BaseGenerator):
         elif 'conv' in pth_var_name:
           var = var.permute(3, 2, 0, 1)
       state_dict[pth_var_name] = var
-    self.logger.info(f'Successfully converted!')
+    self.logger.info('Successfully converted!')
 
-    self.logger.info(f'Saving pytorch model to `{self.model_path}`.')
+    self.logger.info('Saving pytorch model to `{self.model_path}`.')
     for var_name in self.model_specific_vars:
       del state_dict[var_name]
     torch.save(state_dict, self.model_path)
-    self.logger.info(f'Successfully saved!')
+    self.logger.info('Successfully saved!')
 
     self.load()
 
     # Official tensorflow model can only run on GPU.
     if test_num <= 0 or not tf.test.is_built_with_cuda():
       return
-    self.logger.info(f'Testing conversion results.')
+    self.logger.info('Testing conversion results.')
     self.model.eval().to(self.run_device)
     total_distance = 0.0
     for i in range(test_num):
@@ -127,9 +127,9 @@ class StyleGANGenerator(BaseGenerator):
                                randomize_noise=self.randomize_noise)
       pth_output = self.synthesize(latent_code)['image']
       distance = np.average(np.abs(tf_output - pth_output))
-      self.logger.debug(f'  Test {i:03d}: distance {distance:.6e}.')
+      self.logger.debug('  Test {i:03d}: distance {distance:.6e}.')
       total_distance += distance
-    self.logger.info(f'Average distance is {total_distance / test_num:.6e}.')
+    self.logger.info('Average distance is {total_distance / test_num:.6e}.')
 
   def sample(self, num, latent_space_type='Z'):
     """Samples latent codes randomly.
@@ -153,7 +153,7 @@ class StyleGANGenerator(BaseGenerator):
     elif latent_space_type == 'WP':
       latent_codes = np.random.randn(num, self.num_layers, self.w_space_dim)
     else:
-      raise ValueError(f'Latent space type `{latent_space_type}` is invalid!')
+      raise ValueError('Latent space type `{latent_space_type}` is invalid!')
 
     return latent_codes.astype(np.float32)
 
@@ -173,7 +173,7 @@ class StyleGANGenerator(BaseGenerator):
       ValueError: If the given `latent_space_type` is not supported.
     """
     if not isinstance(latent_codes, np.ndarray):
-      raise ValueError(f'Latent codes should be with type `numpy.ndarray`!')
+      raise ValueError('Latent codes should be with type `numpy.ndarray`!')
 
     latent_space_type = latent_space_type.upper()
     if latent_space_type == 'Z':
@@ -185,7 +185,7 @@ class StyleGANGenerator(BaseGenerator):
     elif latent_space_type == 'WP':
       latent_codes = latent_codes.reshape(-1, self.num_layers, self.w_space_dim)
     else:
-      raise ValueError(f'Latent space type `{latent_space_type}` is invalid!')
+      raise ValueError('Latent space type `{latent_space_type}` is invalid!')
 
     return latent_codes.astype(np.float32)
 
@@ -215,7 +215,7 @@ class StyleGANGenerator(BaseGenerator):
       A dictionary whose values are raw outputs from the generator.
     """
     if not isinstance(latent_codes, np.ndarray):
-      raise ValueError(f'Latent codes should be with type `numpy.ndarray`!')
+      raise ValueError('Latent codes should be with type `numpy.ndarray`!')
 
     results = {}
 
@@ -226,11 +226,11 @@ class StyleGANGenerator(BaseGenerator):
       if not (len(latent_codes_shape) == 2 and
               latent_codes_shape[0] <= self.batch_size and
               latent_codes_shape[1] == self.latent_space_dim):
-        raise ValueError(f'Latent_codes should be with shape [batch_size, '
-                         f'latent_space_dim], where `batch_size` no larger '
-                         f'than {self.batch_size}, and `latent_space_dim` '
-                         f'equal to {self.latent_space_dim}!\n'
-                         f'But {latent_codes_shape} received!')
+        raise ValueError('Latent_codes should be with shape [batch_size, '
+                         'latent_space_dim], where `batch_size` no larger '
+                         'than {self.batch_size}, and `latent_space_dim` '
+                         'equal to {self.latent_space_dim}!\n'
+                         'But {latent_codes_shape} received!')
       zs = torch.from_numpy(latent_codes).type(torch.FloatTensor)
       zs = zs.to(self.run_device)
       ws = self.model.mapping(zs)
@@ -243,11 +243,11 @@ class StyleGANGenerator(BaseGenerator):
       if not (len(latent_codes_shape) == 2 and
               latent_codes_shape[0] <= self.batch_size and
               latent_codes_shape[1] == self.w_space_dim):
-        raise ValueError(f'Latent_codes should be with shape [batch_size, '
-                         f'w_space_dim], where `batch_size` no larger than '
-                         f'{self.batch_size}, and `w_space_dim` equal to '
-                         f'{self.w_space_dim}!\n'
-                         f'But {latent_codes_shape} received!')
+        raise ValueError('Latent_codes should be with shape [batch_size, '
+                         'w_space_dim], where `batch_size` no larger than '
+                         '{self.batch_size}, and `w_space_dim` equal to '
+                         '{self.w_space_dim}!\n'
+                         'But {latent_codes_shape} received!')
       ws = torch.from_numpy(latent_codes).type(torch.FloatTensor)
       ws = ws.to(self.run_device)
       wps = self.model.truncation(ws)
@@ -259,23 +259,23 @@ class StyleGANGenerator(BaseGenerator):
               latent_codes_shape[0] <= self.batch_size and
               latent_codes_shape[1] == self.num_layers and
               latent_codes_shape[2] == self.w_space_dim):
-        raise ValueError(f'Latent_codes should be with shape [batch_size, '
-                         f'num_layers, w_space_dim], where `batch_size` no '
-                         f'larger than {self.batch_size}, `num_layers` equal '
-                         f'to {self.num_layers}, and `w_space_dim` equal to '
-                         f'{self.w_space_dim}!\n'
-                         f'But {latent_codes_shape} received!')
+        raise ValueError('Latent_codes should be with shape [batch_size, '
+                         'num_layers, w_space_dim], where `batch_size` no '
+                         'larger than {self.batch_size}, `num_layers` equal '
+                         'to {self.num_layers}, and `w_space_dim` equal to '
+                         '{self.w_space_dim}!\n'
+                         'But {latent_codes_shape} received!')
       wps = torch.from_numpy(latent_codes).type(torch.FloatTensor)
       wps = wps.to(self.run_device)
       results['wp'] = latent_codes
     else:
-      raise ValueError(f'Latent space type `{latent_space_type}` is invalid!')
+      raise ValueError('Latent space type `{latent_space_type}` is invalid!')
 
     if generate_style:
       for i in range(self.num_layers):
         style = self.model.synthesis.__getattr__(
-            f'layer{i}').epilogue.style_mod.dense(wps[:, i, :])
-        results[f'style{i:02d}'] = self.get_value(style)
+            'layer{i}').epilogue.style_mod.dense(wps[:, i, :])
+        results['style{i:02d}'] = self.get_value(style)
 
     if generate_image:
       images = self.model.synthesis(wps)

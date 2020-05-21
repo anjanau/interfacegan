@@ -55,7 +55,7 @@ def main():
   args = parse_args()
   logger = setup_logger(args.output_dir, logger_name='generate_data')
 
-  logger.info(f'Initializing generator.')
+  logger.info('Initializing generator.')
   gan_type = MODEL_POOL[args.model_name]['gan_type']
   if gan_type == 'pggan':
     model = PGGANGenerator(args.model_name, logger)
@@ -64,19 +64,19 @@ def main():
     model = StyleGANGenerator(args.model_name, logger)
     kwargs = {'latent_space_type': args.latent_space_type}
   else:
-    raise NotImplementedError(f'Not implemented GAN type `{gan_type}`!')
+    raise NotImplementedError('Not implemented GAN type `{gan_type}`!')
 
-  logger.info(f'Preparing latent codes.')
+  logger.info('Preparing latent codes.')
   if os.path.isfile(args.latent_codes_path):
-    logger.info(f'  Load latent codes from `{args.latent_codes_path}`.')
+    logger.info('  Load latent codes from `{args.latent_codes_path}`.')
     latent_codes = np.load(args.latent_codes_path)
     latent_codes = model.preprocess(latent_codes, **kwargs)
   else:
-    logger.info(f'  Sample latent codes randomly.')
+    logger.info('  Sample latent codes randomly.')
     latent_codes = model.easy_sample(args.num, **kwargs)
   total_num = latent_codes.shape[0]
 
-  logger.info(f'Generating {total_num} samples.')
+  logger.info('Generating {total_num} samples.')
   results = defaultdict(list)
   pbar = tqdm(total=total_num, leave=False)
   for latent_codes_batch in model.get_batch_inputs(latent_codes):
@@ -90,7 +90,7 @@ def main():
     for key, val in outputs.items():
       if key == 'image':
         for image in val:
-          save_path = os.path.join(args.output_dir, f'{pbar.n:06d}.jpg')
+          save_path = os.path.join(args.output_dir, '{pbar.n:06d}.jpg')
           cv2.imwrite(save_path, image[:, :, ::-1])
           pbar.update(1)
       else:
@@ -98,12 +98,12 @@ def main():
     if 'image' not in outputs:
       pbar.update(latent_codes_batch.shape[0])
     if pbar.n % 1000 == 0 or pbar.n == total_num:
-      logger.debug(f'  Finish {pbar.n:6d} samples.')
+      logger.debug('  Finish {pbar.n:6d} samples.')
   pbar.close()
 
-  logger.info(f'Saving results.')
+  logger.info('Saving results.')
   for key, val in results.items():
-    save_path = os.path.join(args.output_dir, f'{key}.npy')
+    save_path = os.path.join(args.output_dir, '{key}.npy')
     np.save(save_path, np.concatenate(val, axis=0))
 
 
